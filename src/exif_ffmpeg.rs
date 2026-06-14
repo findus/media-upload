@@ -1,63 +1,60 @@
-
-use std::path::{Path, PathBuf};
-use std::process::{Command};
 use std::io::{self, Write};
-use failure::Error;
+use std::path::{Path, PathBuf};
+use std::process::Command;
+use anyhow::{bail, Error};
+use thiserror::Error as ThisError;
 
 pub(crate) fn remove_video_metadata(filepath: &Path) -> Result<PathBuf, Error> {
-     convert_file(filepath)
+    convert_file(filepath)
 }
 
-#[derive(Debug, Fail)]
+#[derive(Debug, ThisError)]
 enum ConvertError {
-    #[fail(display = "File Creation Failed Error")]
+    #[error("File Creation Failed Error")]
     FileCreationFailed,
-    #[fail(display = "ToStr Failed")]
-    ToStrFailed
+    #[error("ToStr Failed")]
+    ToStrFailed,
 }
 
 fn convert_file(file: &Path) -> Result<PathBuf, Error> {
-
-    // let extension = file.extension()?.to_str()?;
-    let filename = file.file_name()
+    let filename = file
+        .file_name()
         .ok_or(ConvertError::FileCreationFailed)?
-        .to_str().ok_or(ConvertError::ToStrFailed)?;
+        .to_str()
+        .ok_or(ConvertError::ToStrFailed)?;
 
     let out = format!("/tmp/processed/{}", filename);
     std::fs::create_dir_all(Path::new("/tmp/processed/"))?;
     let output = Command::new("ffmpeg")
         .arg("-y")
-        .args(&["-i", file.to_str().ok_or(ConvertError::ToStrFailed)?])
-        .args(&["-map_metadata", "-1"])
-        .args(&["-c:v","copy"])
-        .args(&["-c:a","copy"])
+        .args(["-i", file.to_str().ok_or(ConvertError::ToStrFailed)?])
+        .args(["-map_metadata", "-1"])
+        .args(["-c:v", "copy"])
+        .args(["-c:a", "copy"])
         .arg(&out)
         .output()?;
 
     println!("status: {}", output.status);
-
     io::stdout().write_all(&output.stdout)?;
     io::stderr().write_all(&output.stderr)?;
 
-    println!("{}", output.status.success());
     if output.status.code() != Some(0) {
-         bail!("FFmpeg quit with a non zero exit code!");
+        bail!("FFmpeg quit with a non zero exit code!");
     }
 
     let mut path = PathBuf::new();
     path.push(out);
-
     Ok(path)
 }
 
 #[cfg(test)]
 mod test_ffmpeg {
-    //use crate::remove_metadata;
     use std::path::Path;
-    use crate::exif_ffmeg::convert_file;
+    use crate::exif_ffmpeg::convert_file;
 
     #[test]
+    #[ignore]
     fn it_works() {
-        convert_file(Path::new("/Users/findus/Videos/Zeitraffer.mp4"));
+        let _ = convert_file(Path::new("/Users/findus/Videos/Zeitraffer.mp4"));
     }
 }

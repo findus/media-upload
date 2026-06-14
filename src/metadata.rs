@@ -1,7 +1,7 @@
-use std::path::{PathBuf};
+use std::path::PathBuf;
 use crate::exif_image;
 use crate::exif_ffmpeg;
-use failure::Error;
+use anyhow::Error;
 
 pub trait MetaData {
     fn remove_metadata(&self) -> Result<PathBuf, Error>;
@@ -20,6 +20,7 @@ impl MetaData for VideoFile<'_> {
 pub struct Image<'a> {
     pub path: &'a str,
 }
+
 impl MetaData for Image<'_> {
     fn remove_metadata(&self) -> Result<PathBuf, Error> {
         exif_image::remove_img_metadata(self.path.as_ref())
