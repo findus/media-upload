@@ -71,7 +71,7 @@ pub(crate) async fn save_file(payload: Multipart, data: Data<ServerConfig>) -> R
 
     let links = filenames
         .iter()
-        .map(|filename| format!("{}{}\n", config.url, filename))
+        .map(|filename| format!("{}/{}\n", config.url, filename))
         .collect::<String>();
 
     Ok(HttpResponse::Ok().content_type("text/plain").body(links))
