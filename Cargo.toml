@@ -11,11 +11,12 @@ readme = "README.md"
 
 [dependencies]
 futures = "0.3"
-actix-multipart = "0.7"
-actix-web = { version = "4", default-features = false, features = ["macros", "compress-gzip", "compress-zstd"] }
-actix-web-httpauth = "0.8"
+actix-multipart = "0.8.5"
+actix-web = { version = "4.15.0", default-features = false, features = ["macros", "compress-gzip", "compress-zstd"] }
+actix-web-httpauth = "0.8.3"
 config = "0.14"
 rexiv2 = "0.9"
 infer = "0.16"
 anyhow = "1"
 thiserror = "2"
+arc-swap = "0.4.8"
