@@ -3,18 +3,19 @@ use anyhow::{bail, Error};
 
 pub(crate) fn remove_img_metadata(filepath: &Path) -> Result<PathBuf, Error> {
     let metadata = rexiv2::Metadata::new_from_path(filepath)?;
-    println!("Supports exif: {} -> {}", filepath.display(), metadata.supports_exif());
 
-    match metadata.supports_exif() {
-        true => {
-            metadata.clear_exif();
-            metadata.save_to_file(filepath)?;
-            println!("Stripped Metadata");
-            Ok(PathBuf::from(filepath))
-        }
-        _ => {
-            println!("Passed file does not support exif");
-            bail!("Exif is unsupported on this filetype");
-        }
+    let supports_any = metadata.supports_exif() || metadata.supports_xmp() || metadata.supports_iptc();
+
+    if !supports_any {
+        println!("Passed file does not support Exif, XMP or IPTC");
+        bail!("Exif/XMP/IPTC is unsupported on this filetype");
     }
+
+    // clear() removes Exif, XMP and IPTC alike, so GPS/author/caption data
+    // stashed in XMP or IPTC (common on phone/editor exports) is wiped too,
+    // not just Exif.
+    metadata.clear();
+    metadata.save_to_file(filepath)?;
+    println!("Stripped Metadata");
+    Ok(PathBuf::from(filepath))
 }
