@@ -33,6 +33,6 @@ pub struct Noop<'a> {
 
 impl MetaData for Noop<'_> {
     fn remove_metadata(&self) -> Result<PathBuf, Error> {
-        Ok(PathBuf::new())
+        Ok(PathBuf::from(self.path))
     }
 }
