@@ -1,12 +1,12 @@
 [package]
 name = "media-uploader"
-version = "0.3.0"
-authors = ["Philipp Hentschel <philipp@f1ndus.de>"]
+version = "0.3.1"
+authors = ["findus <findus@trsk.cc>"]
 edition = "2024"
 license = "MIT"
 description = "Uploads all kind of media and strips metadata"
 keywords = ["actix", "actix-web", "multipart"]
-repository = "https://github.com/f1ndus/media-uploader"
+repository = "https://github.com/findus/media-uploader"
 readme = "README.md"
 
 [dependencies]
