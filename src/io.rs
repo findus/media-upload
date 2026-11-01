@@ -1,3 +1,4 @@
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -73,13 +74,21 @@ pub(crate) async fn save_file_to_temp_folder(
     field: &mut Field,
     temp_path: String,
 ) -> Result<(), actix_web::Error> {
-    let mut bytes = Vec::new();
-    while let Some(chunk) = field.next().await {
-        let data = chunk?;
-        bytes.extend_from_slice(&data);
-    }
-    web::block(move || std::fs::write(&temp_path, &bytes))
+    let mut file = web::block(move || std::fs::File::create(&temp_path))
         .await
         .map_err(ErrorInternalServerError)?
-        .map_err(ErrorInternalServerError)
+        .map_err(ErrorInternalServerError)?;
+
+    // Write each chunk straight to disk as it arrives instead of buffering
+    // the whole upload into a Vec<u8> first, so one large/concurrent upload
+    // can't blow up the process's memory usage.
+    while let Some(chunk) = field.next().await {
+        let data = chunk?;
+        file = web::block(move || file.write_all(&data).map(|_| file))
+            .await
+            .map_err(ErrorInternalServerError)?
+            .map_err(ErrorInternalServerError)?;
+    }
+
+    Ok(())
 }
