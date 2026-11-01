@@ -8,7 +8,9 @@ rustPlatform.buildRustPackage {
   pname = "media-uploader";
   version = (builtins.fromTOML (builtins.readFile ./Cargo.toml)).package.version;
   src = ./.;
-  cargoLock = ./Cargo.lock;
+  cargoLock = {
+    lockFile = ./Cargo.lock;
+  };
 
   nativeBuildInputs = [ pkg-config ];
   buildInputs = [
