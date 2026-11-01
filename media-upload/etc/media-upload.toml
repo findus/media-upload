@@ -1,5 +1,5 @@
 path = "/var/www/pics.russendis.co/"
-token = "E9BD645AE918FE51E64515C60A404221371761025116C96D788B283C97C90ECB"
+token = "<CHANGE THIS>"
 url = "https://pics.russendis.co/"
 ip = "127.0.0.1"
 port = "3000"
