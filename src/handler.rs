@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use actix_multipart::Multipart;
-use actix_web::error::ErrorInternalServerError;
+use actix_web::error::{ErrorBadRequest, ErrorInternalServerError};
 use actix_web::{Error, HttpResponse};
 use actix_web::web::Data;
 use futures::StreamExt;
@@ -21,12 +21,16 @@ pub(crate) async fn save_file(payload: Multipart, data: Data<ServerConfig>) -> R
     while let Some((i, item)) = p.next().await {
         let mut field = item?;
 
-        let content_type = field.content_disposition().unwrap();
-        let user_filename = content_type.get_filename().unwrap().to_string();
+        let content_type = field
+            .content_disposition()
+            .ok_or_else(|| ErrorBadRequest("Multipart part is missing a Content-Disposition header"))?;
+        let user_filename = content_type
+            .get_filename()
+            .ok_or_else(|| ErrorBadRequest("Multipart part is missing a filename"))?
+            .to_string();
 
-        let public_filename =
-            generate_public_filename(content_type, i)
-            .expect("Cannot generate public filename");
+        let public_filename = generate_public_filename(content_type, i)
+            .map_err(ErrorBadRequest)?;
 
         filenames.push(public_filename.clone());
 
@@ -38,7 +42,7 @@ pub(crate) async fn save_file(payload: Multipart, data: Data<ServerConfig>) -> R
         let path = format!("{}/{}", config.path, public_filename);
         let public_path = Path::new(&path);
 
-        let filetype = infer::get_from_path(&temp_path).unwrap();
+        let filetype = infer::get_from_path(&temp_path).map_err(ErrorInternalServerError)?;
 
         let meta_data: Option<Box<dyn metadata::MetaData>> = match filetype {
             Some(t) if t.mime_type().contains("image")
