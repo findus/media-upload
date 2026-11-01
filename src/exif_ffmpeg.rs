@@ -28,7 +28,14 @@ fn convert_file(file: &Path) -> Result<PathBuf, Error> {
     let output = Command::new("ffmpeg")
         .arg("-y")
         .args(["-i", file.to_str().ok_or(ConvertError::ToStrFailed)?])
+        // Global metadata only clears container-level tags. Phones/cameras
+        // frequently stash GPS location, rotation and creation_time as
+        // per-stream tags instead, which survive "-map_metadata -1" alone,
+        // so clear those explicitly, plus chapters, too.
         .args(["-map_metadata", "-1"])
+        .args(["-map_metadata:s:v", "-1"])
+        .args(["-map_metadata:s:a", "-1"])
+        .args(["-map_chapters", "-1"])
         .args(["-c:v", "copy"])
         .args(["-c:a", "copy"])
         .arg(&out)
