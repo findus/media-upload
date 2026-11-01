@@ -33,6 +33,7 @@ pub(crate) async fn save_file(payload: Multipart, data: Data<ServerConfig>) -> R
         let temp_path = format!("/tmp/{}", public_filename);
 
         save_file_to_temp_folder(&mut field, temp_path.clone()).await?;
+        let _temp_guard = TempFileGuard::new(temp_path.clone());
 
         let path = format!("{}/{}", config.path, public_filename);
         let public_path = Path::new(&path);
@@ -51,6 +52,12 @@ pub(crate) async fn save_file(payload: Multipart, data: Data<ServerConfig>) -> R
 
         if let Some(meta_data) = meta_data {
             if let Ok(stripped_file_path) = meta_data.as_ref().remove_metadata() {
+                // Video stripping writes a separate /tmp/processed/* copy; clean
+                // that up too once we're done with it. Image/Noop stripping
+                // reuses temp_path in place, already covered by _temp_guard.
+                let _stripped_guard = (stripped_file_path.as_path() != Path::new(&temp_path))
+                    .then(|| TempFileGuard::new(stripped_file_path.clone()));
+
                 copy_file(&stripped_file_path, public_path)
                     .map_err(ErrorInternalServerError)?;
             } else {

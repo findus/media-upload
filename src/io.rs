@@ -15,6 +15,24 @@ pub(crate) fn copy_file(file: &PathBuf, destination: &Path) -> Result<(), Error>
     Ok(())
 }
 
+/// Removes its wrapped path when dropped. Used to guarantee that pre-strip
+/// temp copies (which still carry the original metadata) don't linger in a
+/// shared, world-readable /tmp indefinitely, on every exit path including
+/// early returns on error.
+pub(crate) struct TempFileGuard(PathBuf);
+
+impl TempFileGuard {
+    pub(crate) fn new(path: impl Into<PathBuf>) -> Self {
+        Self(path.into())
+    }
+}
+
+impl Drop for TempFileGuard {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(&self.0);
+    }
+}
+
 pub(crate) fn get_filename_extension(path: &Path) -> Option<String> {
     match path.extension()?.to_os_string().to_str() {
         Some(str) => Some(str.to_string()),
